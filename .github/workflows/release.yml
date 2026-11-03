@@ -132,13 +132,14 @@ jobs:
           are attached to this release. License texts and details: Contents/Resources/bin/licenses/
           and Contents/Resources/bin/THIRD_PARTY_NOTICES.md in the app."
 
-      # Keep only the newest release; delete older ones together with their tags.
+      # Keep only the newest release; delete older ones together with their tags. Sort by publishedAt:
+      # a release's createdAt is the date of its commit, so two releases of one commit tie.
       - name: Prune old releases
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release list --limit 1000 --json tagName,createdAt \
-            --jq 'sort_by(.createdAt) | reverse | .[1:][] | .tagName' |
+          gh release list --limit 1000 --json tagName,publishedAt \
+            --jq 'sort_by(.publishedAt) | reverse | .[1:][] | .tagName' |
           while read -r tag; do
             gh release delete "$tag" --cleanup-tag --yes
           done
