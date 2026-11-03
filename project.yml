@@ -1,0 +1,62 @@
+name: Downloader
+options:
+  bundleIdPrefix: com.lvcas0x1
+  deploymentTarget:
+    macOS: "14.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "0.1.0"
+    CURRENT_PROJECT_VERSION: "1"
+    GENERATE_INFOPLIST_FILE: YES
+    CODE_SIGN_IDENTITY: "-"
+    CODE_SIGN_STYLE: Manual
+    DEVELOPMENT_TEAM: ""
+targets:
+  DownloaderCore:
+    type: framework
+    platform: macOS
+    sources:
+      - Sources/DownloaderCore
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lvcas0x1.downloader.core
+        CODE_SIGN_IDENTITY: "-"
+    scheme:
+      testTargets:
+        - DownloaderCoreTests
+      gatherCoverageData: false
+  Downloader:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/Downloader
+      - path: Resources/bin
+        type: folder
+        buildPhase: resources
+    dependencies:
+      - target: DownloaderCore
+        embed: true
+    info:
+      path: Sources/Downloader/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleShortVersionString: "$(MARKETING_VERSION)"
+        CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
+        CFBundleName: Downloader
+        CFBundleDisplayName: Downloader
+        LSMinimumSystemVersion: "14.0"
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.lvcas0x1.downloader
+        ENABLE_HARDENED_RUNTIME: YES
+        CODE_SIGN_IDENTITY: "-"
+        GENERATE_INFOPLIST_FILE: NO
+  DownloaderCoreTests:
+    type: bundle.unit-test
+    platform: macOS
+    sources:
+      - Tests/DownloaderCoreTests
+    dependencies:
+      - target: DownloaderCore

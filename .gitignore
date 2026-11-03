@@ -1,0 +1,16 @@
+# App bundles, DMGs, and DerivedData built by scripts/
+build/
+DerivedData/
+
+# Generated from project.yml by XcodeGen
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+
+# Bundled third-party binaries: fetched and verified by scripts/fetch-binaries.sh
+Resources/bin/*
+!Resources/bin/README.md
+!Resources/bin/THIRD_PARTY_NOTICES.md
+
+# macOS
+.DS_Store
