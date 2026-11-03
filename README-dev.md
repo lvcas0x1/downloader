@@ -1,6 +1,6 @@
 # Downloader: developer guide
 
-Downloader is a native macOS menu-bar app written in Swift (SwiftUI + AppKit). The Xcode project is generated from `project.yml` by XcodeGen. The app runs bundled copies of yt-dlp, FFmpeg/FFprobe, and Deno as child processes; it has no Swift package dependencies.
+Downloader is a native macOS menu-bar app written in Swift (SwiftUI + AppKit). The Xcode project is generated from `project.yml` by XcodeGen. The app runs bundled copies of yt-dlp, FFmpeg/FFprobe, and Deno as child processes; its only Swift package is [Sparkle](https://sparkle-project.org/) for in-app updates.
 The planning artifacts are in `openspec/changes/add-ytdlp-menubar-downloader/` (proposal, specs, design, tasks).
 
 ## Requirements
@@ -17,10 +17,20 @@ scripts/build-app.sh          # xcodegen generate + Release build -> build/Downl
 open build/Downloader.app
 ```
 
-- `scripts/fetch-binaries.sh` downloads pinned versions of yt-dlp and Deno, checks each against a pinned SHA-256, ad-hoc signs them, saves the yt-dlp source to `build/sources/`, and runs `scripts/build-ffmpeg.sh`. The binaries are not committed (`.gitignore`).
+- `scripts/fetch-binaries.sh` downloads pinned versions of yt-dlp and Deno, checks each against a pinned SHA-256, ad-hoc signs them (the app build re-signs them), saves the yt-dlp source to `build/sources/`, and runs `scripts/build-ffmpeg.sh`. The binaries are not committed (`.gitignore`).
 - `scripts/build-ffmpeg.sh` builds `ffmpeg` and `ffprobe` (about a minute on Apple Silicon) from the official FFmpeg and LAME source releases, checked against pinned SHA-256s: an LGPL build (no `--enable-gpl`, no `--enable-nonfree`) with `--disable-autodetect`, so the executables link only to macOS system libraries. The source archives and the script are kept in `build/sources/`.
-- `scripts/build-app.sh` reads `APP_VERSION` (`MARKETING_VERSION`) and `BUILD_NUMBER` (`CURRENT_PROJECT_VERSION`), and ad-hoc signs the whole bundle.
+- `scripts/build-app.sh` reads `APP_VERSION` (`MARKETING_VERSION`), `BUILD_NUMBER` (`CURRENT_PROJECT_VERSION`), and `SIGN_IDENTITY`, removes Sparkle's XPC services, and signs the bundle inside-out (bundled programs, Sparkle, DownloaderCore, app).
 - To work in Xcode, run `xcodegen generate` and open `Downloader.xcodeproj` (generated, not committed).
+
+### Signing
+
+The app is signed with a self-signed certificate, **Downloader Code Signing** (valid until 2036-10-31), so every build has the same designated requirement (`identifier "com.lvcas0x1.downloader" and certificate leaf = H"0fb144bd…"`).
+
+- **Local builds:** `scripts/build-app.sh` uses the identity from your login keychain and falls back to ad-hoc signing with a warning when it is missing.
+- **CI:** the same certificate is imported from the `SIGNING_CERTIFICATE_P12` and `SIGNING_CERTIFICATE_PASSWORD` secrets into a temporary keychain.
+- The hardened runtime is off (`project.yml`): with a self-signed certificate (no Team ID), library validation would reject the embedded frameworks.
+
+Keep a backup of the certificate (with its private key) outside the keychain.
 
 There is no notarization and no App Store packaging.
 
@@ -41,9 +51,17 @@ xcodebuild test -project Downloader.xcodeproj -scheme DownloaderCore -destinatio
 
 ## Release
 
-`.github/workflows/release.yml` runs on every push to `main` that changes `Sources/`, `Tests/`, `Resources/`, `project.yml`, `scripts/`, or the workflow itself (and on manual dispatch). It installs XcodeGen, fetches yt-dlp and Deno, builds FFmpeg, runs the tests, builds the app, packages a DMG, publishes a GitHub release `v<version>` with the DMG and every file in `build/sources/` (the source of the bundled GPL/LGPL programs), and deletes all older releases and their tags.
+`.github/workflows/release.yml` runs on every push to `main` that changes `Sources/`, `Tests/`, `Resources/`, `project.yml`, `scripts/`, or the workflow itself (and on manual dispatch). It installs XcodeGen, fetches yt-dlp and Deno, builds FFmpeg, runs the tests, imports the signing certificate, builds and signs the app, packages a DMG, writes the Sparkle update feed, publishes a GitHub release `v<version>` with the DMG, `appcast.xml`, and every file in `build/sources/` (the source of the bundled GPL/LGPL programs), and deletes all older releases and their tags.
 
 The version keeps `project.yml`'s `MARKETING_VERSION` major.minor and raises the patch (`scripts/next-version.sh`).
+
+### In-app updates (Sparkle)
+
+- The app reads the feed from `SUFeedURL` = `https://github.com/lvcas0x1/downloader/releases/latest/download/appcast.xml`. Only the newest release is kept, so this URL always points to the current feed.
+- `scripts/make-appcast.sh` writes `build/appcast.xml` with the DMG's EdDSA signature from Sparkle's `sign_update`. In CI the private key comes from the `SPARKLE_ED_PRIVATE_KEY` secret; locally it is read from the login keychain (account `dev.lvcas0x1.downloader`). The public key is `SUPublicEDKey` in `project.yml`.
+- Sparkle installs an update only if its EdDSA signature matches `SUPublicEDKey`. If the private key is lost, existing installs cannot be updated any more, so keep a backup of it.
+- `CURRENT_PROJECT_VERSION` (`CFBundleVersion`) is the workflow run number, so every release has a higher build number, which Sparkle uses to compare versions.
+- Automatic checks are on (`SUEnableAutomaticChecks`); the menu-bar menu also has **Update**.
 
 ## Project layout
 
@@ -64,7 +82,15 @@ project.yml         XcodeGen spec
 
 ## Dependencies
 
-There are no Swift package dependencies (`project.yml` declares no `packages:`) and no vendored third-party source code.
+The only Swift package is Sparkle, pinned to an exact version in `project.yml`. There is no vendored third-party source code.
+
+### Swift packages
+
+| Package | Version | Use | License | Open source |
+|---|---|---|---|---|
+| [Sparkle](https://github.com/sparkle-project/Sparkle) | 2.10.1 | In-app updates (framework embedded in the app; `sign_update` in CI) | [MIT](https://github.com/sparkle-project/Sparkle/blob/2.x/LICENSE) | Yes |
+
+Sparkle's license ships in the app at `Contents/Resources/bin/licenses/Sparkle-LICENSE`.
 
 ### Bundled programs
 

@@ -4,6 +4,11 @@ options:
   deploymentTarget:
     macOS: "14.0"
   createIntermediateGroups: true
+packages:
+  # In-app updates.
+  Sparkle:
+    url: https://github.com/sparkle-project/Sparkle
+    exactVersion: 2.10.1
 settings:
   base:
     SWIFT_VERSION: "5.0"
@@ -38,6 +43,7 @@ targets:
     dependencies:
       - target: DownloaderCore
         embed: true
+      - package: Sparkle
     info:
       path: Sources/Downloader/Info.plist
       properties:
@@ -47,10 +53,15 @@ targets:
         CFBundleName: Downloader
         CFBundleDisplayName: Downloader
         LSMinimumSystemVersion: "14.0"
+        SUFeedURL: https://github.com/lvcas0x1/downloader/releases/latest/download/appcast.xml
+        SUPublicEDKey: FntBnjJ4m2AjwWeM56A1c6yepS1RqFPCsCZj2QzSvjo=
+        SUEnableAutomaticChecks: true
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.lvcas0x1.downloader
-        ENABLE_HARDENED_RUNTIME: YES
+        # Off: with a self-signed certificate (no Team ID), library validation would reject the
+        # embedded frameworks. There is no notarization, which is what would require it.
+        ENABLE_HARDENED_RUNTIME: NO
         CODE_SIGN_IDENTITY: "-"
         GENERATE_INFOPLIST_FILE: NO
   DownloaderCoreTests:

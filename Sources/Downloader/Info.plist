@@ -24,5 +24,11 @@
 	<string>14.0</string>
 	<key>LSUIElement</key>
 	<true/>
+	<key>SUEnableAutomaticChecks</key>
+	<true/>
+	<key>SUFeedURL</key>
+	<string>https://github.com/lvcas0x1/downloader/releases/latest/download/appcast.xml</string>
+	<key>SUPublicEDKey</key>
+	<string>FntBnjJ4m2AjwWeM56A1c6yepS1RqFPCsCZj2QzSvjo=</string>
 </dict>
 </plist>

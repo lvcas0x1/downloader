@@ -11,6 +11,7 @@ Versions are pinned in `scripts/fetch-binaries.sh` and `scripts/build-ffmpeg.sh`
 | FFmpeg (`ffmpeg`, `ffprobe`), built from unmodified source by `scripts/build-ffmpeg.sh` | 9.0.2 | LGPL-2.1-or-later (no `--enable-gpl`, no `--enable-nonfree`) | `licenses/FFmpeg-COPYING.LGPLv2.1`, `licenses/FFmpeg-LICENSE.md` |
 | LAME (statically linked into `ffmpeg` and `ffprobe` for MP3 encoding) | 4.0 | LGPL-2.0-or-later (GNU Library General Public License version 2) | `licenses/LAME-COPYING` |
 | Deno (unmodified official build) | 2.9.8 | MIT | `licenses/Deno-LICENSE.md` |
+| Sparkle (`Contents/Frameworks/Sparkle.framework`, in-app updates) | 2.10.1 | MIT, with the notices of the code it includes | `licenses/Sparkle-LICENSE` |
 
 ## Corresponding source
 

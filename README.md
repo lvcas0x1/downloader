@@ -16,6 +16,7 @@ Downloader is a free, open-source macOS menu-bar app for downloading video and a
 - **History:** finished and failed downloads are kept (up to 1000 records), and each can be downloaded again.
 - **Browser cookies:** optionally use cookies from Safari, Chrome, Firefox, Edge, or Brave for content that needs a sign-in.
 - **Self-contained:** uses only its bundled copies of yt-dlp, FFmpeg, and Deno, never system-installed ones.
+- **Automatic updates** through Sparkle: Downloader checks for new versions and installs them when you agree.
 
 ## Installation
 
@@ -27,9 +28,15 @@ Requirements: macOS 14 or later on Apple Silicon.
 
 Downloader has no Dock icon. Look for the download icon (↓ in a circle) in the menu bar.
 
+### Updates
+
+Downloader checks for updates automatically and asks before installing one. To check now, right-click the menu-bar icon and choose **Update**.
+
+If you installed a version without **Update** in its menu, install the latest release once by hand as above; later versions update themselves.
+
 ## Usage
 
-Click the menu-bar icon to show or hide the window. Right-click it for **Open Downloader** and **Quit Downloader**.
+Click the menu-bar icon to show or hide the window. Right-click it for **Open Downloader**, **Update**, and **Quit Downloader**.
 
 ### Downloading
 
@@ -66,6 +73,7 @@ The app bundles these programs and runs them as separate processes. Each keeps i
 | [yt-dlp](https://github.com/yt-dlp/yt-dlp) (official `yt-dlp_macos` build) | yt-dlp itself is Unlicense; the build includes GPL code, so the build as a whole is GPL-3.0-or-later |
 | [FFmpeg](https://ffmpeg.org/) (`ffmpeg`, `ffprobe`, built from source) with [LAME](https://lame.sourceforge.io/) | LGPL-2.1-or-later (FFmpeg), LGPL-2.0-or-later (LAME) |
 | [Deno](https://github.com/denoland/deno) | MIT |
+| [Sparkle](https://github.com/sparkle-project/Sparkle) (update framework, embedded) | MIT |
 
 The source code of yt-dlp, FFmpeg, and LAME, and the FFmpeg build script, are attached to every [release](https://github.com/lvcas0x1/downloader/releases) next to the DMG. Details: [`Resources/bin/THIRD_PARTY_NOTICES.md`](Resources/bin/THIRD_PARTY_NOTICES.md).
 
