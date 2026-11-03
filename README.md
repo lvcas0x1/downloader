@@ -59,15 +59,15 @@ Only download content you have the right to download, and follow each site's ter
 
 ## Third-party components
 
-The app bundles these programs unmodified and runs them as separate processes. Each keeps its own license.
+The app bundles these programs and runs them as separate processes. Each keeps its own license; the full texts are in the app at `Contents/Resources/bin/licenses/`.
 
 | Component | License |
 |---|---|
-| [yt-dlp](https://github.com/yt-dlp/yt-dlp) (`yt-dlp_macos` build) | Unlicense; the standalone build includes GPLv3+ code, so the build as a whole is GPLv3+ |
-| [FFmpeg](https://ffmpeg.org/) (`ffmpeg`, `ffprobe`) | GPL version 3 |
+| [yt-dlp](https://github.com/yt-dlp/yt-dlp) (official `yt-dlp_macos` build) | yt-dlp itself is Unlicense; the build includes GPL code, so the build as a whole is GPL-3.0-or-later |
+| [FFmpeg](https://ffmpeg.org/) (`ffmpeg`, `ffprobe`, built from source) with [LAME](https://lame.sourceforge.io/) | LGPL-2.1-or-later (FFmpeg), LGPL-2.0-or-later (LAME) |
 | [Deno](https://github.com/denoland/deno) | MIT |
 
-Versions and source links: [`Resources/bin/THIRD_PARTY_NOTICES.md`](Resources/bin/THIRD_PARTY_NOTICES.md).
+The source code of yt-dlp, FFmpeg, and LAME, and the FFmpeg build script, are attached to every [release](https://github.com/lvcas0x1/downloader/releases) next to the DMG. Details: [`Resources/bin/THIRD_PARTY_NOTICES.md`](Resources/bin/THIRD_PARTY_NOTICES.md).
 
 ## Contributing
 

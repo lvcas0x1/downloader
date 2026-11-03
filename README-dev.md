@@ -12,12 +12,13 @@ The planning artifacts are in `openspec/changes/add-ytdlp-menubar-downloader/` (
 ## Build and run
 
 ```bash
-sh scripts/fetch-binaries.sh  # download yt-dlp, ffmpeg, ffprobe, deno into Resources/bin
+sh scripts/fetch-binaries.sh  # download yt-dlp and deno, build ffmpeg and ffprobe, into Resources/bin
 scripts/build-app.sh          # xcodegen generate + Release build -> build/Downloader.app
 open build/Downloader.app
 ```
 
-- `scripts/fetch-binaries.sh` downloads pinned versions, checks each against a pinned SHA-256, and ad-hoc signs them. The binaries are not committed (`.gitignore`).
+- `scripts/fetch-binaries.sh` downloads pinned versions of yt-dlp and Deno, checks each against a pinned SHA-256, ad-hoc signs them, saves the yt-dlp source to `build/sources/`, and runs `scripts/build-ffmpeg.sh`. The binaries are not committed (`.gitignore`).
+- `scripts/build-ffmpeg.sh` builds `ffmpeg` and `ffprobe` (about a minute on Apple Silicon) from the official FFmpeg and LAME source releases, checked against pinned SHA-256s: an LGPL build (no `--enable-gpl`, no `--enable-nonfree`) with `--disable-autodetect`, so the executables link only to macOS system libraries. The source archives and the script are kept in `build/sources/`.
 - `scripts/build-app.sh` reads `APP_VERSION` (`MARKETING_VERSION`) and `BUILD_NUMBER` (`CURRENT_PROJECT_VERSION`), and ad-hoc signs the whole bundle.
 - To work in Xcode, run `xcodegen generate` and open `Downloader.xcodeproj` (generated, not committed).
 
@@ -40,7 +41,7 @@ xcodebuild test -project Downloader.xcodeproj -scheme DownloaderCore -destinatio
 
 ## Release
 
-`.github/workflows/release.yml` runs on every push to `main` that changes `Sources/`, `Tests/`, `Resources/`, `project.yml`, `scripts/`, or the workflow itself (and on manual dispatch). It installs XcodeGen, fetches the binaries, runs the tests, builds the app, packages a DMG, publishes a GitHub release `v<version>`, and deletes all older releases and their tags.
+`.github/workflows/release.yml` runs on every push to `main` that changes `Sources/`, `Tests/`, `Resources/`, `project.yml`, `scripts/`, or the workflow itself (and on manual dispatch). It installs XcodeGen, fetches yt-dlp and Deno, builds FFmpeg, runs the tests, builds the app, packages a DMG, publishes a GitHub release `v<version>` with the DMG and every file in `build/sources/` (the source of the bundled GPL/LGPL programs), and deletes all older releases and their tags.
 
 The version keeps `project.yml`'s `MARKETING_VERSION` major.minor and raises the patch (`scripts/next-version.sh`).
 
@@ -53,8 +54,9 @@ Sources/
   Downloader/       app: status item, window, SwiftUI views (Downloads, History, Settings)
 Tests/
   DownloaderCoreTests/  unit tests, plus opt-in live integration tests
-Resources/bin/      bundled binaries (fetched, not committed), README.md, THIRD_PARTY_NOTICES.md
-scripts/            fetch-binaries.sh, build-app.sh, make-dmg.sh, next-version.sh
+Resources/bin/      bundled binaries (fetched or built, not committed), licenses/, README.md,
+                    THIRD_PARTY_NOTICES.md
+scripts/            fetch-binaries.sh, build-ffmpeg.sh, build-app.sh, make-dmg.sh, next-version.sh
 design/             interface mock-up
 docs/               README images
 project.yml         XcodeGen spec
@@ -66,19 +68,21 @@ There are no Swift package dependencies (`project.yml` declares no `packages:`) 
 
 ### Bundled programs
 
-Copied unmodified into `Downloader.app/Contents/Resources/bin/` and run as separate processes. Versions are pinned in `scripts/fetch-binaries.sh`.
+Copied into `Downloader.app/Contents/Resources/bin/` and run as separate processes. Versions are pinned in `scripts/fetch-binaries.sh` and `scripts/build-ffmpeg.sh`. License texts: `Resources/bin/licenses/`.
 
 | Program | Version | License | Commercial use | Source |
 |---|---|---|---|---|
-| yt-dlp (`yt-dlp_macos`, PyInstaller build) | 2026.10.21 | yt-dlp itself is [Unlicense](https://github.com/yt-dlp/yt-dlp/blob/master/LICENSE). Per the [yt-dlp README](https://github.com/yt-dlp/yt-dlp#release-files), the PyInstaller-bundled executables include GPLv3+ code, so the combined work is GPLv3+ | Allowed | [github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) |
-| FFmpeg (`ffmpeg`, `ffprobe`), static arm64 build by Martin Riedl | 8.1.2 | GPL version 3 (`--enable-gpl --enable-version3`, no `--enable-nonfree`) | Allowed | [ffmpeg.org](https://ffmpeg.org/download.html), [build script](https://git.martin-riedl.de/ffmpeg/build-script), [binaries](https://ffmpeg.martin-riedl.de) |
-| Deno | 2.9.8 | [MIT](https://github.com/denoland/deno/blob/main/LICENSE.md) | Allowed | [github.com/denoland/deno](https://github.com/denoland/deno) |
+| yt-dlp (`yt-dlp_macos`, official PyInstaller build, unmodified) | 2026.10.21 | yt-dlp itself is [Unlicense](https://github.com/yt-dlp/yt-dlp/blob/master/LICENSE). Per the [yt-dlp README](https://github.com/yt-dlp/yt-dlp#release-files), the PyInstaller-bundled executables include GPLv3+ code, so the combined work is GPLv3+. The GPL part on macOS is mutagen (GPL-2.0-or-later) per [THIRD_PARTY_LICENSES.txt](https://github.com/yt-dlp/yt-dlp/blob/2026.10.21/THIRD_PARTY_LICENSES.txt) | Allowed | [github.com/yt-dlp/yt-dlp](https://github.com/yt-dlp/yt-dlp) |
+| FFmpeg (`ffmpeg`, `ffprobe`), built by `scripts/build-ffmpeg.sh` | 9.0.2 | LGPL-2.1-or-later ([ffmpeg.org/legal.html](https://ffmpeg.org/legal.html)) | Allowed | [ffmpeg.org/releases](https://ffmpeg.org/releases/) |
+| LAME, statically linked into `ffmpeg` and `ffprobe` | 4.0 | LGPL-2.0-or-later | Allowed | [lame.sourceforge.io](https://lame.sourceforge.io/) |
+| Deno (official build, unmodified) | 2.9.8 | [MIT](https://github.com/denoland/deno/blob/main/LICENSE.md) | Allowed | [github.com/denoland/deno](https://github.com/denoland/deno) |
 
-Notes:
+### License compliance
 
-- GPL permits selling and commercial distribution ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#DoesTheGPLAllowMoney)). It requires that anyone who distributes the binaries also makes the exactly corresponding source available, as easy to access as the binaries ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#AnonFTPAndSendSources), GPLv3 section 6(d)).
-- The app talks to these programs only through command-line arguments and pipes. The FSF considers such programs normally separate programs that may be distributed together as an aggregate, even under different licenses ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#MereAggregation)); it also notes that the final line is a legal question. On that basis the app's own code is MIT-licensed.
-- FFmpeg's distribution checklist: [ffmpeg.org/legal.html](https://ffmpeg.org/legal.html).
+- **Source:** GPLv3 section 6(d) and LGPL-2.1 section 4 allow distributing binaries from a download place if the corresponding source is offered from the same place. Each release therefore attaches `build/sources/`: the yt-dlp source at the release tag (with its build scripts and the pinned, hash-checked macOS dependency list `bundle/requirements/macos.txt`), the FFmpeg and LAME source releases, and `build-ffmpeg.sh`. The source must correspond exactly to the binaries ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#AnonFTPAndSendSources)), so change versions only through the scripts.
+- **License texts:** GPLv3 section 4 requires giving recipients a copy of the license. The texts are committed in `Resources/bin/licenses/` and copied into the app. Update them when a version changes.
+- **Separate programs:** the app talks to these programs only through command-line arguments and pipes. The FSF considers such programs normally separate programs that may be distributed together as an aggregate, even under different licenses ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#MereAggregation)); it also notes that the final line is a legal question. On that basis the app's own code is MIT-licensed.
+- **Commercial use:** GPL and LGPL permit selling and commercial distribution ([GNU GPL FAQ](https://www.gnu.org/licenses/gpl-faq.html#DoesTheGPLAllowMoney)). FFmpeg is built without `--enable-nonfree`, so the build is redistributable.
 
 ### Toolchain and build tools
 

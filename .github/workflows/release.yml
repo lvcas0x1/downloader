@@ -39,7 +39,8 @@ jobs:
           xcodebuild -version
           xcodegen --version
 
-      # Pinned yt-dlp, ffmpeg, ffprobe, and Deno, each verified against a pinned SHA-256.
+      # Pinned yt-dlp and Deno, each verified against a pinned SHA-256; ffmpeg and ffprobe built
+      # from pinned, checksum-verified sources. Source archives are kept in build/sources/.
       - name: Fetch bundled binaries
         run: sh scripts/fetch-binaries.sh
 
@@ -71,7 +72,9 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           VERSION: ${{ steps.version.outputs.version }}
         run: |
-          gh release create "v$VERSION" "build/Downloader-$VERSION.dmg" \
+          # The source archives of the bundled GPL/LGPL programs are published with the DMG
+          # (GPLv3 section 6(d), LGPL-2.1 section 4).
+          gh release create "v$VERSION" "build/Downloader-$VERSION.dmg" build/sources/* \
             --target "$GITHUB_SHA" \
             --title "Downloader $VERSION" \
             --notes "Built from ${GITHUB_SHA::7}. Apple Silicon, macOS 14 or later.
@@ -79,8 +82,14 @@ jobs:
           The app is ad-hoc signed and not notarized. After copying it to Applications, open it once,
           then allow it in System Settings > Privacy & Security > Open Anyway.
 
-          Bundles yt-dlp (Unlicense), FFmpeg (GPLv3), and Deno (MIT) unmodified; see
-          Contents/Resources/bin/THIRD_PARTY_NOTICES.md for versions and source links."
+          Bundled third-party programs (unmodified, run as separate processes):
+          - yt-dlp (yt-dlp_macos): GPLv3+ as a whole (yt-dlp itself is Unlicense; the build includes GPL code)
+          - FFmpeg (ffmpeg, ffprobe), built from source with LAME: LGPL-2.1-or-later
+          - Deno: MIT
+
+          Corresponding source: the yt-dlp, FFmpeg, and LAME source archives and build-ffmpeg.sh
+          are attached to this release. License texts and details: Contents/Resources/bin/licenses/
+          and Contents/Resources/bin/THIRD_PARTY_NOTICES.md in the app."
 
       # Keep only the newest release; delete older ones together with their tags.
       - name: Prune old releases

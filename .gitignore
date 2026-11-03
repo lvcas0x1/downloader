@@ -11,6 +11,7 @@ xcuserdata/
 Resources/bin/*
 !Resources/bin/README.md
 !Resources/bin/THIRD_PARTY_NOTICES.md
+!Resources/bin/licenses/
 
 # macOS
 .DS_Store
