@@ -29,6 +29,27 @@ final class PreviewAndCleanupTests: XCTestCase {
         XCTAssertEqual(entries.map(\.title), ["E1", "E2"])
     }
 
+    func testUntitledPartsUseCollectionTitle() throws {
+        let json = """
+        {"_type":"playlist","title":"My Series","entries":[
+          {"_type":"url","url":"https://www.bilibili.com/video/BV1?p=1"},
+          {"_type":"url","url":"https://www.bilibili.com/video/BV1?p=2"}]}
+        """.data(using: .utf8)!
+        let preview = try PreviewResolver.parse(jsonData: json, sourceURL: "https://www.bilibili.com/video/BV1")
+        XCTAssertEqual(preview.entries.map(\.title), ["My Series (P1)", "My Series (P2)"])
+        XCTAssertEqual(preview.entries.map(\.url), [
+            "https://www.bilibili.com/video/BV1?p=1", "https://www.bilibili.com/video/BV1?p=2"
+        ])
+    }
+
+    func testUntitledEntryWithoutPartKeepsURL() throws {
+        let json = """
+        {"_type":"playlist","title":"My List","entries":[{"url":"https://x/1"}]}
+        """.data(using: .utf8)!
+        let preview = try PreviewResolver.parse(jsonData: json, sourceURL: "https://x/list")
+        XCTAssertEqual(preview.entries.map(\.title), ["https://x/1"])
+    }
+
     func testURLValidation() {
         XCTAssertTrue(PreviewResolver.isSupportedURL("https://example.com/x"))
         XCTAssertTrue(PreviewResolver.isSupportedURL("http://example.com"))

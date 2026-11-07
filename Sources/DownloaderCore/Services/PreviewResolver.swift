@@ -79,19 +79,35 @@ public final class PreviewResolver {
         let type = root["_type"] as? String
         if type == "playlist" || root["entries"] != nil {
             let rawEntries = root["entries"] as? [[String: Any]] ?? []
-            let entries = rawEntries.enumerated().map { index, dict in
-                parseEntry(dict, fallbackID: "\(index)", fallbackURL: sourceURL)
-            }
             let title = (root["title"] as? String) ?? "Playlist"
+            let entries = rawEntries.enumerated().map { index, dict in
+                parseEntry(dict, fallbackID: "\(index)", fallbackURL: sourceURL, collectionTitle: title)
+            }
             return .collection(title: title, entries: entries)
         } else {
             return .single(parseEntry(root, fallbackID: "0", fallbackURL: sourceURL))
         }
     }
 
-    private static func parseEntry(_ dict: [String: Any], fallbackID: String, fallbackURL: String) -> MediaEntry {
+    /// Title for a flat entry that has only a `?p=N` URL, as Bilibili multi-part videos do.
+    private static func partTitle(collectionTitle: String, url: String?) -> String? {
+        guard let url,
+              let part = URLComponents(string: url)?.queryItems?.first(where: { $0.name == "p" })?.value
+        else { return nil }
+        return "\(collectionTitle) (P\(part))"
+    }
+
+    private static func parseEntry(
+        _ dict: [String: Any],
+        fallbackID: String,
+        fallbackURL: String,
+        collectionTitle: String? = nil
+    ) -> MediaEntry {
         let id = (dict["id"] as? String) ?? fallbackID
-        let title = (dict["title"] as? String) ?? (dict["url"] as? String) ?? "Untitled"
+        let rawURL = dict["url"] as? String
+        let title = (dict["title"] as? String)
+            ?? collectionTitle.flatMap { partTitle(collectionTitle: $0, url: rawURL) }
+            ?? rawURL ?? "Untitled"
         let url = (dict["webpage_url"] as? String) ?? (dict["url"] as? String) ?? fallbackURL
         let duration = (dict["duration"] as? Double) ?? (dict["duration"] as? NSNumber)?.doubleValue
         let uploader = dict["uploader"] as? String
